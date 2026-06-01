@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -i -X POST \"https://ide-ia-chi.vercel.app/api/webhooks/n8n\" -H \"content-type: application/json\" -d \"{}\")"
+    ]
+  }
+}

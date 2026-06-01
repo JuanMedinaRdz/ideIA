@@ -83,7 +83,24 @@ function normalizePhone(raw: string): string | null {
   // Normaliza a E.164: '+' + dígitos.
   const digits = raw.replace(/[^\d+]/g, "");
   if (!digits) return null;
-  const e164 = digits.startsWith("+") ? digits : `+${digits}`;
+  let e164 = digits.startsWith("+") ? digits : `+${digits}`;
+
+  // QUIRK MÉXICO: WhatsApp Cloud API añade un "1" después del país (52) para
+  // móviles mexicanos, herencia de cuando WA distinguía móvil/fijo. El número
+  // REAL (en SIM, perfil WhatsApp, contactos) NO tiene ese "1".
+  //
+  // Canonicalizamos quitando el "1" si se cumple el patrón +521XXXXXXXXXX (13
+  // dígitos). Así los usuarios pueden vincular su número como lo conocen y
+  // los mensajes entrantes matchean sin problema.
+  if (e164.startsWith("+521") && e164.length === 13) {
+    e164 = `+52${e164.slice(4)}`;
+  }
+
+  // QUIRK ARGENTINA: similar — WhatsApp añade "9" después de +54 para móviles.
+  if (e164.startsWith("+549") && e164.length === 13) {
+    e164 = `+54${e164.slice(4)}`;
+  }
+
   // Validación mínima: + seguido de 8-15 dígitos (estándar E.164).
   if (!/^\+\d{8,15}$/.test(e164)) return null;
   return e164;
