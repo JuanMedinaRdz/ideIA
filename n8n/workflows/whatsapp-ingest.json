@@ -1,85 +1,431 @@
 {
-  "name": "ideIA - WhatsApp Ingest",
-  "_comment": "Skeleton inicial. Imports a tu instancia n8n (Settings → Import from File). Sustituye las credenciales y el host del webhook por los tuyos.",
+  "name": "ideIA — WhatsApp Ingest (text + audio + image)",
+  "_comment": "Workflow Fase 9. Importar desde n8n: Settings → Import from File. Después configurar las 2 credenciales (Meta WhatsApp Access Token, OpenAI API Key) y los 2 placeholders en mayúsculas: WEBHOOK_VERIFY_TOKEN_AQUI y https://TU-APP.vercel.app.",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
         "path": "ideia-whatsapp",
-        "responseMode": "lastNode",
+        "responseMode": "responseNode",
         "options": {}
       },
-      "id": "trigger-webhook",
-      "name": "WhatsApp Webhook In",
+      "id": "trigger-post",
+      "name": "Meta Webhook (POST messages)",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [240, 300]
+      "position": [240, 400]
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "ideia-whatsapp",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "trigger-get",
+      "name": "Meta Webhook (GET verify)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 200]
     },
     {
       "parameters": {
         "conditions": {
-          "string": [
-            { "value1": "={{$json.body.type}}", "operation": "equal", "value2": "text" }
-          ]
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "id": "verify-token-check",
+              "leftValue": "={{ $json.query['hub.verify_token'] }}",
+              "rightValue": "WEBHOOK_VERIFY_TOKEN_AQUI",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
         }
       },
-      "id": "if-text",
-      "name": "¿Es texto?",
+      "id": "verify-token-if",
+      "name": "¿Token Meta correcto?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [460, 300]
+      "position": [460, 200]
     },
     {
       "parameters": {
-        "_placeholder": "Fase 5: aquí va el nodo OpenAI. Prompt: estructurar el mensaje en {title, summary, category, tags, priority, ai_suggestions}. Por ahora pasamos directo con title=texto crudo."
+        "respondWith": "text",
+        "responseBody": "={{ $('Meta Webhook (GET verify)').item.json.query['hub.challenge'] }}",
+        "options": {}
       },
-      "id": "structure-ai",
-      "name": "OpenAI Structure (Fase 5)",
-      "type": "n8n-nodes-base.noOp",
-      "typeVersion": 1,
-      "position": [680, 240]
+      "id": "respond-challenge",
+      "name": "Devolver hub.challenge",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.2,
+      "position": [680, 120]
     },
     {
       "parameters": {
+        "respondWith": "text",
+        "responseCode": 403,
+        "responseBody": "forbidden",
+        "options": {}
+      },
+      "id": "respond-403",
+      "name": "403 Forbidden",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.2,
+      "position": [680, 280]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "msg",
+              "name": "message",
+              "value": "={{ $json.body.entry[0].changes[0].value.messages[0] }}",
+              "type": "object"
+            },
+            {
+              "id": "phone",
+              "name": "phone_number",
+              "value": "=+{{ $json.body.entry[0].changes[0].value.messages[0].from }}",
+              "type": "string"
+            },
+            {
+              "id": "type",
+              "name": "msg_type",
+              "value": "={{ $json.body.entry[0].changes[0].value.messages[0].type }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "extract-message",
+      "name": "Extraer mensaje",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseCode": 200,
+        "responseBody": "ok",
+        "options": {}
+      },
+      "id": "respond-meta-200",
+      "name": "200 OK a Meta",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.2,
+      "position": [680, 600]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [
+                  {
+                    "id": "is-text",
+                    "leftValue": "={{ $json.msg_type }}",
+                    "rightValue": "text",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "text"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [
+                  {
+                    "id": "is-audio",
+                    "leftValue": "={{ $json.msg_type }}",
+                    "rightValue": "audio",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "audio"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [
+                  {
+                    "id": "is-image",
+                    "leftValue": "={{ $json.msg_type }}",
+                    "rightValue": "image",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "image"
+            }
+          ]
+        },
+        "options": { "fallbackOutput": "extra" }
+      },
+      "id": "switch-type",
+      "name": "Switch por tipo",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [680, 400]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "raw-from-text",
+              "name": "raw_content",
+              "value": "={{ $json.message.text.body }}",
+              "type": "string"
+            },
+            {
+              "id": "source-text",
+              "name": "source",
+              "value": "whatsapp",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-text-payload",
+      "name": "Payload texto",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [900, 280]
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.facebook.com/v20.0/{{ $json.message.audio.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "whatsAppApi",
+        "options": {}
+      },
+      "id": "get-audio-url",
+      "name": "GET audio URL (Meta)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 400]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "whatsAppApi",
+        "options": { "response": { "response": { "responseFormat": "file" } } }
+      },
+      "id": "download-audio",
+      "name": "Download audio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 400]
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": { "language": "es" }
+      },
+      "id": "whisper-transcribe",
+      "name": "Whisper (audio → texto)",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [1300, 400]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "raw-from-audio",
+              "name": "raw_content",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "source-audio",
+              "name": "source",
+              "value": "voice",
+              "type": "string"
+            },
+            {
+              "id": "phone-keep",
+              "name": "phone_number",
+              "value": "={{ $('Extraer mensaje').item.json.phone_number }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-audio-payload",
+      "name": "Payload audio",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1500, 400]
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.facebook.com/v20.0/{{ $json.message.image.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "whatsAppApi",
+        "options": {}
+      },
+      "id": "get-image-url",
+      "name": "GET image URL (Meta)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 560]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "whatsAppApi",
+        "options": { "response": { "response": { "responseFormat": "file" } } }
+      },
+      "id": "download-image",
+      "name": "Download image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 560]
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": { "__rl": true, "mode": "list", "value": "gpt-4o-mini" },
+        "text": "Describe lo que ves en esta imagen en español, en 2-3 frases. Si hay texto visible, transcríbelo. Si es captura de pantalla, indica qué app/web parece. El resultado se usará para crear una idea/nota.",
+        "inputType": "base64",
+        "binaryPropertyName": "data",
+        "options": {}
+      },
+      "id": "vision-describe",
+      "name": "Vision (image → descripción)",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [1300, 560]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "raw-from-image",
+              "name": "raw_content",
+              "value": "={{ $json.message.content || $json.text || $json.response }}",
+              "type": "string"
+            },
+            {
+              "id": "source-image",
+              "name": "source",
+              "value": "image",
+              "type": "string"
+            },
+            {
+              "id": "phone-keep-img",
+              "name": "phone_number",
+              "value": "={{ $('Extraer mensaje').item.json.phone_number }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-image-payload",
+      "name": "Payload imagen",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1500, 560]
+    },
+    {
+      "parameters": {
+        "method": "POST",
         "url": "https://TU-APP.vercel.app/api/webhooks/n8n",
-        "options": {},
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {
-              "name": "x-webhook-secret",
-              "value": "={{$env.N8N_WEBHOOK_SECRET}}"
-            },
-            {
-              "name": "content-type",
-              "value": "application/json"
-            }
+            { "name": "x-webhook-secret", "value": "={{ $env.N8N_WEBHOOK_SECRET }}" },
+            { "name": "content-type", "value": "application/json" }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"phone_number\": \"{{$json.body.from}}\",\n  \"title\": \"{{$json.body.text}}\",\n  \"summary\": \"\",\n  \"source\": \"whatsapp\",\n  \"priority\": \"medium\"\n}",
-        "requestMethod": "POST"
+        "jsonBody": "={\n  \"phone_number\": \"{{ $json.phone_number || $('Extraer mensaje').item.json.phone_number }}\",\n  \"raw_content\": \"{{ $json.raw_content.replaceAll('\"', '\\\\\"').replaceAll('\\n', '\\\\n') }}\",\n  \"source\": \"{{ $json.source }}\"\n}",
+        "options": {}
       },
       "id": "post-to-ideia",
-      "name": "POST to ideIA webhook",
+      "name": "POST a ideIA webhook",
       "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [900, 240]
+      "typeVersion": 4.2,
+      "position": [1750, 400]
     }
   ],
   "connections": {
-    "WhatsApp Webhook In": {
-      "main": [[{ "node": "¿Es texto?", "type": "main", "index": 0 }]]
+    "Meta Webhook (GET verify)": {
+      "main": [[{ "node": "¿Token Meta correcto?", "type": "main", "index": 0 }]]
     },
-    "¿Es texto?": {
+    "¿Token Meta correcto?": {
       "main": [
-        [{ "node": "OpenAI Structure (Fase 5)", "type": "main", "index": 0 }],
-        []
+        [{ "node": "Devolver hub.challenge", "type": "main", "index": 0 }],
+        [{ "node": "403 Forbidden", "type": "main", "index": 0 }]
       ]
     },
-    "OpenAI Structure (Fase 5)": {
-      "main": [[{ "node": "POST to ideIA webhook", "type": "main", "index": 0 }]]
+    "Meta Webhook (POST messages)": {
+      "main": [[
+        { "node": "Extraer mensaje", "type": "main", "index": 0 },
+        { "node": "200 OK a Meta", "type": "main", "index": 0 }
+      ]]
+    },
+    "Extraer mensaje": {
+      "main": [[{ "node": "Switch por tipo", "type": "main", "index": 0 }]]
+    },
+    "Switch por tipo": {
+      "main": [
+        [{ "node": "Payload texto", "type": "main", "index": 0 }],
+        [{ "node": "GET audio URL (Meta)", "type": "main", "index": 0 }],
+        [{ "node": "GET image URL (Meta)", "type": "main", "index": 0 }]
+      ]
+    },
+    "GET audio URL (Meta)": {
+      "main": [[{ "node": "Download audio", "type": "main", "index": 0 }]]
+    },
+    "Download audio": {
+      "main": [[{ "node": "Whisper (audio → texto)", "type": "main", "index": 0 }]]
+    },
+    "Whisper (audio → texto)": {
+      "main": [[{ "node": "Payload audio", "type": "main", "index": 0 }]]
+    },
+    "GET image URL (Meta)": {
+      "main": [[{ "node": "Download image", "type": "main", "index": 0 }]]
+    },
+    "Download image": {
+      "main": [[{ "node": "Vision (image → descripción)", "type": "main", "index": 0 }]]
+    },
+    "Vision (image → descripción)": {
+      "main": [[{ "node": "Payload imagen", "type": "main", "index": 0 }]]
+    },
+    "Payload texto": {
+      "main": [[{ "node": "POST a ideIA webhook", "type": "main", "index": 0 }]]
+    },
+    "Payload audio": {
+      "main": [[{ "node": "POST a ideIA webhook", "type": "main", "index": 0 }]]
+    },
+    "Payload imagen": {
+      "main": [[{ "node": "POST a ideIA webhook", "type": "main", "index": 0 }]]
     }
   },
   "settings": {},

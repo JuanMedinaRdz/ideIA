@@ -194,12 +194,68 @@ OpenAI estructura el mensaje → título, resumen, prioridad (probablemente `urg
 
 > **Cost-tracking**: cada llamada IA queda registrada en `ai_usage` (tabla en Supabase) con tokens consumidos, latencia y costo en USD (microcents). Puedes hacer `SELECT * FROM ai_usage ORDER BY created_at DESC LIMIT 10;` para auditar.
 
-### Importar el workflow en n8n
+### Configurar n8n + Meta WhatsApp (Fase 9)
 
-1. Ten una instancia n8n corriendo (Docker, n8n Cloud, self-hosted).
-2. **Settings → Import from File** → elige [`n8n/workflows/whatsapp-ingest.json`](n8n/workflows/whatsapp-ingest.json).
-3. En el nodo "POST to ideIA webhook" cambia la URL por la tuya y configura `N8N_WEBHOOK_SECRET` como env var en n8n.
-4. Conecta el trigger a tu canal WhatsApp Business (en Fase 5 añadiremos OpenAI entre medias).
+El workflow [`n8n/workflows/whatsapp-ingest.json`](n8n/workflows/whatsapp-ingest.json) recibe mensajes
+WhatsApp (texto / audio / imagen) y los manda a `/api/webhooks/n8n` con `raw_content`
+que ideIA estructura con OpenAI.
+
+#### 1. Importar el workflow
+
+En n8n: **Workflows → Add → Import from File** → elige el JSON. Verás ~15 nodos.
+
+#### 2. Crear las 2 credenciales necesarias
+
+a) **WhatsApp API** (de Meta): **Credentials → Add → WhatsApp**. Mete tu Phone Number ID
+   y el Access Token. Si tu token es temporal (24h), genera uno permanente en
+   Meta → Business Settings → System Users.
+
+b) **OpenAI API**: **Credentials → Add → OpenAI**. Pega tu `sk-proj-...`. Esta
+   credencial la usan los nodos "Whisper" y "Vision" del workflow.
+
+#### 3. Sustituir 3 placeholders en el workflow
+
+- En todos los nodos `HTTP Request` que apuntan a Meta: asocia la credencial WhatsApp.
+- En "Whisper (audio → texto)" y "Vision (image → descripción)": asocia la credencial OpenAI.
+- En "¿Token Meta correcto?": reemplaza `WEBHOOK_VERIFY_TOKEN_AQUI` por un string aleatorio
+  (ej: usa `openssl rand -hex 16`). Apúntalo, lo pegas en Meta en el paso 5.
+- En "POST a ideIA webhook": cambia `https://TU-APP.vercel.app` por tu URL Vercel real.
+
+#### 4. Set env vars en n8n
+
+En la instancia n8n (Hostinger panel → app → environment): añade
+`N8N_WEBHOOK_SECRET` con el mismo valor que tienes en Vercel.
+
+#### 5. Configurar Meta webhook
+
+a) Activa el workflow en n8n (toggle arriba a la derecha → Active).
+
+b) Click en el nodo "Meta Webhook (POST messages)" → copia la **Production URL**
+   (algo como `https://n8n.tudominio.com/webhook/ideia-whatsapp`).
+
+c) En Meta for Developers → tu app → WhatsApp → Configuration → Webhook:
+   - **Callback URL**: la URL que copiaste.
+   - **Verify Token**: el string que pusiste en el paso 3.
+   - Click **Verify and save** → debe pasar (Meta hace GET y n8n responde el challenge).
+   - **Webhook fields**: marca `messages`.
+
+#### 6. Test final
+
+Desde tu WhatsApp personal (debe estar añadido como recipient en Meta sandbox),
+manda al número de Meta:
+
+1. **Mensaje de texto**: "Refactor del onboarding antes del viernes"
+2. **Mensaje de voz**: explica una idea en voz alta
+3. **Imagen**: una captura de pantalla o foto
+
+En ~5-10 segundos, las 3 deben aparecer estructuradas en
+`https://ide-ia-chi.vercel.app/dashboard`.
+
+#### Debugging
+
+- **n8n executions** (sidebar izquierdo) muestra cada ejecución verde/roja con detalle de cada nodo.
+- Supabase Table Editor → `ingest_events` muestra qué llegó a tu backend.
+- Supabase Table Editor → `ai_usage` muestra el costo de cada llamada IA.
 
 ---
 
@@ -221,7 +277,7 @@ OpenAI estructura el mensaje → título, resumen, prioridad (probablemente `urg
 - ✅ **Fase 5** — OpenAI: estructuración automática + tracking de uso.
 - ✅ **Fase 6** — Detalle de idea editable, re-estructuración IA, búsqueda con filtros, skeletons, toasts, optimistic favorito, animaciones stagger.
 - ⏳ **Fase 8** — Deploy a Vercel.
-- ⏳ **Fase 9** — WhatsApp + n8n + Whisper + Vision.
+- ✅ **Fase 9** — WhatsApp + n8n + Whisper + Vision.
 - ⏳ **Fase 7** — Playwright E2E (al final, una vez todo lo demás está en prod).
 
 ---
