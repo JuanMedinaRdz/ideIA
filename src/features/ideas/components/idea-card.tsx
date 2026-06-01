@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Star, MessageSquare, Mic, Image as ImageIcon, Globe } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { PriorityDot } from "./priority-dot";
-import { AttachmentBadge } from "./attachment-preview";
+import { AttachmentBadge, AttachmentThumb } from "./attachment-preview";
 import { timeAgo } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import type { Idea, IdeaSource } from "@/features/ideas/types/idea";
@@ -74,6 +74,9 @@ export function IdeaCard({ idea }: { idea: Idea }) {
             )}
           </div>
         </div>
+
+        {/* Thumbnail compacto a la derecha si hay imagen adjunta */}
+        <AttachmentThumb url={idea.attachmentUrl} type={idea.attachmentType} size="md" />
       </div>
     </Card>
     </Link>

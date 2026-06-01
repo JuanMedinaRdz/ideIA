@@ -95,3 +95,36 @@ export function AttachmentBadge({ type }: { type?: string }) {
   }
   return null;
 }
+
+/**
+ * Thumbnail compacto para listas/kanban. Solo renderiza si el attachment es
+ * imagen — para audio, en cards no aporta valor visual (usa AttachmentBadge).
+ *
+ * Decisión TDAH: thumbnail pequeño (no >64px) — informa que hay imagen sin
+ * dominar la card. Las imágenes grandes están reservadas a la vista detalle.
+ */
+export function AttachmentThumb({
+  url,
+  type,
+  size = "md",
+}: {
+  url?: string;
+  type?: string;
+  size?: "sm" | "md";
+}) {
+  if (!url || !type?.startsWith("image/")) return null;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={url}
+      alt=""
+      loading="lazy"
+      className={cn(
+        "shrink-0 rounded-md border border-border object-cover bg-muted/30",
+        size === "sm" && "size-9",
+        size === "md" && "size-12",
+      )}
+    />
+  );
+}
+

@@ -11,7 +11,10 @@
       "PowerShell($env:NEXT_PUBLIC_SUPABASE_URL=\"https://placeholder.supabase.co\"; $env:NEXT_PUBLIC_SUPABASE_ANON_KEY=\"placeholder-anon-key\"; pnpm build 2>&1 | Select-Object -Last 10)",
       "PowerShell(pnpm add -D @playwright/test 2>&1)",
       "PowerShell(pnpm exec playwright install chromium 2>&1)",
-      "PowerShell(pnpm exec playwright test --reporter=list 2>&1)"
+      "PowerShell(pnpm exec playwright test --reporter=list 2>&1)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" -X GET \"https://ide-ia-chi.vercel.app/api/webhooks/n8n\")",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" -X POST \"https://ide-ia-chi.vercel.app/api/webhooks/n8n\" -H \"content-type: application/json\" -d \"{}\")",
+      "Bash(curl -s https://ide-ia-chi.vercel.app/_next/static/chunks/)"
     ]
   }
 }

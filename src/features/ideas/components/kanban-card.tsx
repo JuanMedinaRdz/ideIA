@@ -6,6 +6,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Star, GripVertical } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { PriorityDot } from "./priority-dot";
+import { AttachmentThumb } from "./attachment-preview";
 import { cn } from "@/lib/utils";
 import type { Idea } from "@/features/ideas/types/idea";
 
@@ -52,37 +53,42 @@ export function KanbanCard({ idea }: { idea: Idea }) {
       {/* Contenido clickeable hacia detalle */}
       <Link
         href={`/ideas/${idea.id}`}
-        className="flex min-w-0 flex-1 flex-col gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+        className="flex min-w-0 flex-1 gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
       >
-        <div className="flex items-start justify-between gap-1.5">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <PriorityDot priority={idea.priority} />
-            <p className="text-sm font-medium leading-snug text-foreground line-clamp-2">
-              {idea.title}
-            </p>
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <div className="flex items-start justify-between gap-1.5">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <PriorityDot priority={idea.priority} />
+              <p className="text-sm font-medium leading-snug text-foreground line-clamp-2">
+                {idea.title}
+              </p>
+            </div>
+            {idea.isFavorite && (
+              <Star className="size-3 shrink-0 fill-amber-400 text-amber-400" />
+            )}
           </div>
-          {idea.isFavorite && (
-            <Star className="size-3 shrink-0 fill-amber-400 text-amber-400" />
+
+          {idea.tags.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1">
+              {idea.tags.slice(0, 3).map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded border border-border/60 bg-muted/40 px-1 py-0 text-[9px] text-muted-foreground"
+                >
+                  {tag}
+                </span>
+              ))}
+              {idea.tags.length > 3 && (
+                <span className="text-[9px] text-muted-foreground">
+                  +{idea.tags.length - 3}
+                </span>
+              )}
+            </div>
           )}
         </div>
 
-        {idea.tags.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1">
-            {idea.tags.slice(0, 3).map((tag) => (
-              <span
-                key={tag}
-                className="rounded border border-border/60 bg-muted/40 px-1 py-0 text-[9px] text-muted-foreground"
-              >
-                {tag}
-              </span>
-            ))}
-            {idea.tags.length > 3 && (
-              <span className="text-[9px] text-muted-foreground">
-                +{idea.tags.length - 3}
-              </span>
-            )}
-          </div>
-        )}
+        {/* Thumbnail compacto si hay imagen adjunta */}
+        <AttachmentThumb url={idea.attachmentUrl} type={idea.attachmentType} size="sm" />
       </Link>
     </Card>
   );
