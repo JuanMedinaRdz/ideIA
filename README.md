@@ -204,7 +204,7 @@ que ideIA estructura con OpenAI.
 
 En n8n: **Workflows → Add → Import from File** → elige el JSON. Verás ~15 nodos.
 
-#### 2. Crear las 2 credenciales necesarias
+#### 2. Crear las 3 credenciales necesarias
 
 a) **WhatsApp API** (de Meta): **Credentials → Add → WhatsApp**. Mete tu Phone Number ID
    y el Access Token. Si tu token es temporal (24h), genera uno permanente en
@@ -212,6 +212,13 @@ a) **WhatsApp API** (de Meta): **Credentials → Add → WhatsApp**. Mete tu Pho
 
 b) **OpenAI API**: **Credentials → Add → OpenAI**. Pega tu `sk-proj-...`. Esta
    credencial la usan los nodos "Whisper" y "Vision" del workflow.
+
+c) **HTTP Header Auth** para el webhook a ideIA:
+   - **Credentials → Add → Header Auth**.
+   - **Name**: `ideIA Webhook Secret`.
+   - **Header Name**: `x-webhook-secret`.
+   - **Header Value**: el mismo valor que `N8N_WEBHOOK_SECRET` en Vercel.
+   - Save. Después en el nodo `POST a ideIA webhook` selecciónala como credencial.
 
 #### 3. Sustituir 3 placeholders en el workflow
 
@@ -221,10 +228,11 @@ b) **OpenAI API**: **Credentials → Add → OpenAI**. Pega tu `sk-proj-...`. Es
   (ej: usa `openssl rand -hex 16`). Apúntalo, lo pegas en Meta en el paso 5.
 - En "POST a ideIA webhook": cambia `https://TU-APP.vercel.app` por tu URL Vercel real.
 
-#### 4. Set env vars en n8n
+#### 4. (Saltado) — Ya no hace falta env vars en n8n
 
-En la instancia n8n (Hostinger panel → app → environment): añade
-`N8N_WEBHOOK_SECRET` con el mismo valor que tienes en Vercel.
+Antes recomendábamos `N8N_WEBHOOK_SECRET` como env var del sistema. Ahora
+usamos la credencial "Header Auth" del paso 2c — más seguro (cifrado at rest),
+y funciona aunque no tengas acceso al panel de Hostinger.
 
 #### 5. Configurar Meta webhook
 

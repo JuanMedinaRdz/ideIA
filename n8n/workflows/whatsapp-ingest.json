@@ -355,10 +355,11 @@
       "parameters": {
         "method": "POST",
         "url": "https://TU-APP.vercel.app/api/webhooks/n8n",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "x-webhook-secret", "value": "={{ $env.N8N_WEBHOOK_SECRET }}" },
             { "name": "content-type", "value": "application/json" }
           ]
         },
