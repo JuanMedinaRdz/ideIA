@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Star, MessageSquare, Mic, Image as ImageIcon, Globe } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { PriorityDot } from "./priority-dot";
+import { AttachmentBadge } from "./attachment-preview";
 import { timeAgo } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import type { Idea, IdeaSource } from "@/features/ideas/types/idea";
@@ -54,6 +55,12 @@ export function IdeaCard({ idea }: { idea: Idea }) {
             </span>
             <span aria-hidden>·</span>
             <span>{timeAgo(idea.createdAt)}</span>
+            {idea.attachmentType && (
+              <>
+                <span aria-hidden>·</span>
+                <AttachmentBadge type={idea.attachmentType} />
+              </>
+            )}
             {idea.tags.slice(0, 2).map((tag) => (
               <span
                 key={tag}

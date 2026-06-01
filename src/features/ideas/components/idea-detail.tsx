@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { PriorityDot } from "./priority-dot";
+import { AttachmentPreview } from "./attachment-preview";
 import { timeAgo } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import {
@@ -189,6 +190,11 @@ export function IdeaDetail({ idea }: { idea: Idea }) {
         placeholder="Resumen…"
         disabled={pending}
       />
+
+      {/* Adjunto (imagen/audio) */}
+      {idea.attachmentUrl && (
+        <AttachmentPreview url={idea.attachmentUrl} type={idea.attachmentType} />
+      )}
 
       {/* Tags */}
       {idea.tags.length > 0 && (

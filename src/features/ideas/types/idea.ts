@@ -25,6 +25,8 @@ export interface Idea {
   source: IdeaSource;
   isFavorite: boolean;
   aiSuggestions: string[];
+  attachmentUrl?: string;
+  attachmentType?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -43,6 +45,8 @@ export interface IdeaRow {
   source: IdeaSource;
   is_favorite: boolean;
   ai_suggestions: string[];
+  attachment_url: string | null;
+  attachment_type: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -60,6 +64,8 @@ export function rowToIdea(row: IdeaRow): Idea {
     source: row.source,
     isFavorite: row.is_favorite,
     aiSuggestions: row.ai_suggestions,
+    attachmentUrl: row.attachment_url ?? undefined,
+    attachmentType: row.attachment_type ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

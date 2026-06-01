@@ -1,6 +1,6 @@
 {
-  "name": "ideIA — WhatsApp Ingest (text + audio + image)",
-  "_comment": "Workflow Fase 9. Importar desde n8n: Settings → Import from File. Después configurar las 2 credenciales (Meta WhatsApp Access Token, OpenAI API Key) y los 2 placeholders en mayúsculas: WEBHOOK_VERIFY_TOKEN_AQUI y https://TU-APP.vercel.app.",
+  "name": "ideIA — WhatsApp Ingest (text + audio + image + attachments)",
+  "_comment": "Workflow Fase 9 + attachments. Tras descargar audio/imagen de Meta, subimos a Supabase Storage (bucket idea-attachments, público) y pasamos la URL al webhook. Reemplazar 4 placeholders: WEBHOOK_VERIFY_TOKEN_AQUI, TU-PROYECTO.supabase.co (URL del project), TU-APP.vercel.app (URL Vercel) y asociar las 3 credenciales (WhatsApp API, OpenAI, Header Auth, Supabase Service Role como Header Auth aparte).",
   "nodes": [
     {
       "parameters": {
@@ -64,9 +64,8 @@
     {
       "parameters": {
         "respondWith": "text",
-        "responseCode": 403,
         "responseBody": "forbidden",
-        "options": {}
+        "options": { "responseCode": 403 }
       },
       "id": "respond-403",
       "name": "403 Forbidden",
@@ -109,9 +108,8 @@
     {
       "parameters": {
         "respondWith": "text",
-        "responseCode": 200,
         "responseBody": "ok",
-        "options": {}
+        "options": { "responseCode": 200 }
       },
       "id": "respond-meta-200",
       "name": "200 OK a Meta",
@@ -127,12 +125,7 @@
               "conditions": {
                 "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
                 "conditions": [
-                  {
-                    "id": "is-text",
-                    "leftValue": "={{ $json.msg_type }}",
-                    "rightValue": "text",
-                    "operator": { "type": "string", "operation": "equals" }
-                  }
+                  { "id": "is-text", "leftValue": "={{ $json.msg_type }}", "rightValue": "text", "operator": { "type": "string", "operation": "equals" } }
                 ],
                 "combinator": "and"
               },
@@ -143,12 +136,7 @@
               "conditions": {
                 "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
                 "conditions": [
-                  {
-                    "id": "is-audio",
-                    "leftValue": "={{ $json.msg_type }}",
-                    "rightValue": "audio",
-                    "operator": { "type": "string", "operation": "equals" }
-                  }
+                  { "id": "is-audio", "leftValue": "={{ $json.msg_type }}", "rightValue": "audio", "operator": { "type": "string", "operation": "equals" } }
                 ],
                 "combinator": "and"
               },
@@ -159,12 +147,7 @@
               "conditions": {
                 "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
                 "conditions": [
-                  {
-                    "id": "is-image",
-                    "leftValue": "={{ $json.msg_type }}",
-                    "rightValue": "image",
-                    "operator": { "type": "string", "operation": "equals" }
-                  }
+                  { "id": "is-image", "leftValue": "={{ $json.msg_type }}", "rightValue": "image", "operator": { "type": "string", "operation": "equals" } }
                 ],
                 "combinator": "and"
               },
@@ -185,18 +168,8 @@
       "parameters": {
         "assignments": {
           "assignments": [
-            {
-              "id": "raw-from-text",
-              "name": "raw_content",
-              "value": "={{ $json.message.text.body }}",
-              "type": "string"
-            },
-            {
-              "id": "source-text",
-              "name": "source",
-              "value": "whatsapp",
-              "type": "string"
-            }
+            { "id": "raw-from-text", "name": "raw_content", "value": "={{ $json.message.text.body }}", "type": "string" },
+            { "id": "source-text", "name": "source", "value": "whatsapp", "type": "string" }
           ]
         },
         "options": {}
@@ -247,26 +220,36 @@
     },
     {
       "parameters": {
+        "method": "POST",
+        "url": "=https://TU-PROYECTO.supabase.co/storage/v1/object/idea-attachments/audio-{{ $now.toMillis() }}-{{ Math.random().toString(36).slice(2,10) }}.ogg",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "content-type", "value": "audio/ogg" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "id": "upload-audio-storage",
+      "name": "Upload audio → Supabase Storage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1500, 400]
+    },
+    {
+      "parameters": {
         "assignments": {
           "assignments": [
-            {
-              "id": "raw-from-audio",
-              "name": "raw_content",
-              "value": "={{ $json.text }}",
-              "type": "string"
-            },
-            {
-              "id": "source-audio",
-              "name": "source",
-              "value": "voice",
-              "type": "string"
-            },
-            {
-              "id": "phone-keep",
-              "name": "phone_number",
-              "value": "={{ $('Extraer mensaje').item.json.phone_number }}",
-              "type": "string"
-            }
+            { "id": "raw-from-audio", "name": "raw_content", "value": "={{ $('Whisper (audio → texto)').item.json.text }}", "type": "string" },
+            { "id": "source-audio", "name": "source", "value": "voice", "type": "string" },
+            { "id": "phone-keep", "name": "phone_number", "value": "={{ $('Extraer mensaje').item.json.phone_number }}", "type": "string" },
+            { "id": "attach-url-audio", "name": "attachment_url", "value": "=https://TU-PROYECTO.supabase.co/storage/v1/object/public/idea-attachments/{{ $json.Key.split('/').pop() }}", "type": "string" },
+            { "id": "attach-type-audio", "name": "attachment_type", "value": "audio/ogg", "type": "string" }
           ]
         },
         "options": {}
@@ -275,7 +258,7 @@
       "name": "Payload audio",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [1500, 400]
+      "position": [1700, 400]
     },
     {
       "parameters": {
@@ -321,26 +304,36 @@
     },
     {
       "parameters": {
+        "method": "POST",
+        "url": "=https://TU-PROYECTO.supabase.co/storage/v1/object/idea-attachments/image-{{ $now.toMillis() }}-{{ Math.random().toString(36).slice(2,10) }}.jpg",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "content-type", "value": "image/jpeg" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "id": "upload-image-storage",
+      "name": "Upload image → Supabase Storage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1500, 560]
+    },
+    {
+      "parameters": {
         "assignments": {
           "assignments": [
-            {
-              "id": "raw-from-image",
-              "name": "raw_content",
-              "value": "={{ $json.message.content || $json.text || $json.response }}",
-              "type": "string"
-            },
-            {
-              "id": "source-image",
-              "name": "source",
-              "value": "image",
-              "type": "string"
-            },
-            {
-              "id": "phone-keep-img",
-              "name": "phone_number",
-              "value": "={{ $('Extraer mensaje').item.json.phone_number }}",
-              "type": "string"
-            }
+            { "id": "raw-from-image", "name": "raw_content", "value": "={{ $('Vision (image → descripción)').item.json.content }}", "type": "string" },
+            { "id": "source-image", "name": "source", "value": "image", "type": "string" },
+            { "id": "phone-keep-img", "name": "phone_number", "value": "={{ $('Extraer mensaje').item.json.phone_number }}", "type": "string" },
+            { "id": "attach-url-img", "name": "attachment_url", "value": "=https://TU-PROYECTO.supabase.co/storage/v1/object/public/idea-attachments/{{ $json.Key.split('/').pop() }}", "type": "string" },
+            { "id": "attach-type-img", "name": "attachment_type", "value": "image/jpeg", "type": "string" }
           ]
         },
         "options": {}
@@ -349,7 +342,7 @@
       "name": "Payload imagen",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [1500, 560]
+      "position": [1700, 560]
     },
     {
       "parameters": {
@@ -365,69 +358,47 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"phone_number\": \"{{ $json.phone_number || $('Extraer mensaje').item.json.phone_number }}\",\n  \"raw_content\": \"{{ $json.raw_content.replaceAll('\"', '\\\\\"').replaceAll('\\n', '\\\\n') }}\",\n  \"source\": \"{{ $json.source }}\"\n}",
+        "jsonBody": "={\n  \"phone_number\": \"{{ $json.phone_number || $('Extraer mensaje').item.json.phone_number }}\",\n  \"raw_content\": \"{{ $json.raw_content.replaceAll('\"', '\\\\\"').replaceAll('\\n', '\\\\n') }}\",\n  \"source\": \"{{ $json.source }}\",\n  \"attachment_url\": \"{{ $json.attachment_url || '' }}\",\n  \"attachment_type\": \"{{ $json.attachment_type || '' }}\"\n}",
         "options": {}
       },
       "id": "post-to-ideia",
       "name": "POST a ideIA webhook",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1750, 400]
+      "position": [1950, 400]
     }
   ],
   "connections": {
-    "Meta Webhook (GET verify)": {
-      "main": [[{ "node": "¿Token Meta correcto?", "type": "main", "index": 0 }]]
-    },
-    "¿Token Meta correcto?": {
-      "main": [
-        [{ "node": "Devolver hub.challenge", "type": "main", "index": 0 }],
-        [{ "node": "403 Forbidden", "type": "main", "index": 0 }]
-      ]
-    },
-    "Meta Webhook (POST messages)": {
-      "main": [[
-        { "node": "Extraer mensaje", "type": "main", "index": 0 },
-        { "node": "200 OK a Meta", "type": "main", "index": 0 }
-      ]]
-    },
-    "Extraer mensaje": {
-      "main": [[{ "node": "Switch por tipo", "type": "main", "index": 0 }]]
-    },
-    "Switch por tipo": {
-      "main": [
-        [{ "node": "Payload texto", "type": "main", "index": 0 }],
-        [{ "node": "GET audio URL (Meta)", "type": "main", "index": 0 }],
-        [{ "node": "GET image URL (Meta)", "type": "main", "index": 0 }]
-      ]
-    },
-    "GET audio URL (Meta)": {
-      "main": [[{ "node": "Download audio", "type": "main", "index": 0 }]]
-    },
-    "Download audio": {
-      "main": [[{ "node": "Whisper (audio → texto)", "type": "main", "index": 0 }]]
-    },
-    "Whisper (audio → texto)": {
-      "main": [[{ "node": "Payload audio", "type": "main", "index": 0 }]]
-    },
-    "GET image URL (Meta)": {
-      "main": [[{ "node": "Download image", "type": "main", "index": 0 }]]
-    },
-    "Download image": {
-      "main": [[{ "node": "Vision (image → descripción)", "type": "main", "index": 0 }]]
-    },
-    "Vision (image → descripción)": {
-      "main": [[{ "node": "Payload imagen", "type": "main", "index": 0 }]]
-    },
-    "Payload texto": {
-      "main": [[{ "node": "POST a ideIA webhook", "type": "main", "index": 0 }]]
-    },
-    "Payload audio": {
-      "main": [[{ "node": "POST a ideIA webhook", "type": "main", "index": 0 }]]
-    },
-    "Payload imagen": {
-      "main": [[{ "node": "POST a ideIA webhook", "type": "main", "index": 0 }]]
-    }
+    "Meta Webhook (GET verify)": { "main": [[{ "node": "¿Token Meta correcto?", "type": "main", "index": 0 }]] },
+    "¿Token Meta correcto?": { "main": [
+      [{ "node": "Devolver hub.challenge", "type": "main", "index": 0 }],
+      [{ "node": "403 Forbidden", "type": "main", "index": 0 }]
+    ]},
+    "Meta Webhook (POST messages)": { "main": [[
+      { "node": "Extraer mensaje", "type": "main", "index": 0 },
+      { "node": "200 OK a Meta", "type": "main", "index": 0 }
+    ]]},
+    "Extraer mensaje": { "main": [[{ "node": "Switch por tipo", "type": "main", "index": 0 }]] },
+    "Switch por tipo": { "main": [
+      [{ "node": "Payload texto", "type": "main", "index": 0 }],
+      [{ "node": "GET audio URL (Meta)", "type": "main", "index": 0 }],
+      [{ "node": "GET image URL (Meta)", "type": "main", "index": 0 }]
+    ]},
+    "GET audio URL (Meta)": { "main": [[{ "node": "Download audio", "type": "main", "index": 0 }]] },
+    "Download audio": { "main": [[
+      { "node": "Whisper (audio → texto)", "type": "main", "index": 0 },
+      { "node": "Upload audio → Supabase Storage", "type": "main", "index": 0 }
+    ]]},
+    "Upload audio → Supabase Storage": { "main": [[{ "node": "Payload audio", "type": "main", "index": 0 }]] },
+    "GET image URL (Meta)": { "main": [[{ "node": "Download image", "type": "main", "index": 0 }]] },
+    "Download image": { "main": [[
+      { "node": "Vision (image → descripción)", "type": "main", "index": 0 },
+      { "node": "Upload image → Supabase Storage", "type": "main", "index": 0 }
+    ]]},
+    "Upload image → Supabase Storage": { "main": [[{ "node": "Payload imagen", "type": "main", "index": 0 }]] },
+    "Payload texto": { "main": [[{ "node": "POST a ideIA webhook", "type": "main", "index": 0 }]] },
+    "Payload audio": { "main": [[{ "node": "POST a ideIA webhook", "type": "main", "index": 0 }]] },
+    "Payload imagen": { "main": [[{ "node": "POST a ideIA webhook", "type": "main", "index": 0 }]] }
   },
   "settings": {},
   "active": false

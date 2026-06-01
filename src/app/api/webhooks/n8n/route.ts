@@ -50,6 +50,8 @@ interface StructuredIdeaPayload {
   source?: IdeaSource;
   status?: IdeaStatus;
   ai_suggestions?: string[];
+  attachment_url?: string;
+  attachment_type?: string;
 }
 
 interface RawIdeaPayload {
@@ -57,6 +59,9 @@ interface RawIdeaPayload {
   /** Texto crudo del mensaje. La IA lo estructura. */
   raw_content: string;
   source?: IdeaSource;
+  /** URL pública del archivo (imagen/audio) ya subido a un storage. */
+  attachment_url?: string;
+  attachment_type?: string;
 }
 
 interface PairingPayload {
@@ -223,6 +228,16 @@ export async function POST(request: Request) {
     }
   }
 
+  // Adjuntos: opcionales. Validamos shape (debe ser https://) por seguridad
+  // — si alguien manda javascript: o data: cuela XSS al renderizar la URL.
+  const attachmentUrl =
+    body.attachment_url && /^https:\/\//.test(body.attachment_url)
+      ? body.attachment_url.slice(0, 1000)
+      : null;
+  const attachmentType = body.attachment_type
+    ? body.attachment_type.slice(0, 100)
+    : null;
+
   const { data: idea, error: insertError } = await admin
     .from("ideas")
     .insert({
@@ -237,6 +252,8 @@ export async function POST(request: Request) {
       source: body.source ?? "whatsapp",
       ai_suggestions: structured.ai_suggestions,
       raw_content: structured.raw_content,
+      attachment_url: attachmentUrl,
+      attachment_type: attachmentType,
     })
     .select("id")
     .single();

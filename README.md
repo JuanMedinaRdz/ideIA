@@ -144,11 +144,28 @@ compartido en el header `x-webhook-secret`. Genera ese secret con algo como:
 
 …y pégalo en `.env.local` como `N8N_WEBHOOK_SECRET=...`.
 
-### Migraciones 0002 + 0003
+### Migraciones 0002 + 0003 + 0004
 
 Antes de probar el webhook con IA, ejecuta **en orden** en el SQL Editor:
 1. [`supabase/migrations/0002_phone_linking.sql`](supabase/migrations/0002_phone_linking.sql) — tablas phone_links, pairing_codes, ingest_events.
 2. [`supabase/migrations/0003_ai_tracking.sql`](supabase/migrations/0003_ai_tracking.sql) — `raw_content` en `ideas` + tabla `ai_usage`.
+3. [`supabase/migrations/0004_attachments.sql`](supabase/migrations/0004_attachments.sql) — `attachment_url` + `attachment_type` en `ideas`.
+
+### Bucket de Supabase Storage para attachments
+
+Para que las imágenes y audios de WhatsApp queden adjuntos a la nota:
+
+1. Supabase Dashboard → **Storage → New bucket**.
+2. **Name**: `idea-attachments`
+3. **Public bucket**: ✅ ON (las URLs son aleatorias, no adivinables).
+4. Create.
+
+En n8n necesitas una **credencial extra "Header Auth"** para subir:
+- **Credential Name**: `Supabase Service Role`
+- **Header Name**: `Authorization`
+- **Header Value**: `Bearer TU_SUPABASE_SERVICE_ROLE_KEY`
+
+Asignala a los nodos `Upload audio → Supabase Storage` y `Upload image → Supabase Storage`.
 
 ### Probar con cURL
 

@@ -56,6 +56,8 @@ export interface Database {
           is_favorite: boolean;
           ai_suggestions: string[];
           raw_content: string | null;
+          attachment_url: string | null;
+          attachment_type: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -72,6 +74,8 @@ export interface Database {
           is_favorite?: boolean;
           ai_suggestions?: string[];
           raw_content?: string | null;
+          attachment_url?: string | null;
+          attachment_type?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["ideas"]["Insert"]>;
         Relationships: [];
