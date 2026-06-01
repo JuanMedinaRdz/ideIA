@@ -88,16 +88,14 @@ function normalizePhone(raw: string): string | null {
   // QUIRK MÉXICO: WhatsApp Cloud API añade un "1" después del país (52) para
   // móviles mexicanos, herencia de cuando WA distinguía móvil/fijo. El número
   // REAL (en SIM, perfil WhatsApp, contactos) NO tiene ese "1".
-  //
-  // Canonicalizamos quitando el "1" si se cumple el patrón +521XXXXXXXXXX (13
-  // dígitos). Así los usuarios pueden vincular su número como lo conocen y
-  // los mensajes entrantes matchean sin problema.
-  if (e164.startsWith("+521") && e164.length === 13) {
+  // Canonicalizamos quitando el "1": +5218442891397 → +528442891397.
+  if (/^\+521\d{10}$/.test(e164)) {
     e164 = `+52${e164.slice(4)}`;
   }
 
   // QUIRK ARGENTINA: similar — WhatsApp añade "9" después de +54 para móviles.
-  if (e164.startsWith("+549") && e164.length === 13) {
+  // +5491165432109 → +541165432109
+  if (/^\+549\d{10}$/.test(e164)) {
     e164 = `+54${e164.slice(4)}`;
   }
 

@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(curl -s -i -X POST \"https://ide-ia-chi.vercel.app/api/webhooks/n8n\" -H \"content-type: application/json\" -d \"{}\")"
+      "Bash(curl -s -i -X POST \"https://ide-ia-chi.vercel.app/api/webhooks/n8n\" -H \"content-type: application/json\" -d \"{}\")",
+      "Bash(curl -s \"https://ide-ia-chi.vercel.app/api/webhooks/n8n\" -X POST -H \"content-type: application/json\" -H \"x-webhook-secret: AN71N1DB1f2FUgcunlSpmqBykEDZLxDCCYz9ElyKi98\" -d '{\"phone_number\":\"+5218442891397\",\"raw_content\":\"test simulando meta\",\"source\":\"whatsapp\"}')",
+      "Bash(curl -s -X POST \"https://ide-ia-chi.vercel.app/api/webhooks/n8n\" -H \"content-type: application/json\" -H \"x-webhook-secret: AN71N1DB1f2FUgcunlSpmqBykEDZLxDCCYz9ElyKi98\" -d '{\"phone_number\":\"+528442891397\",\"raw_content\":\"test directo sin el 1\",\"source\":\"whatsapp\"}')",
+      "Bash(curl -s -X POST \"https://ide-ia-chi.vercel.app/api/webhooks/n8n\" -H \"content-type: application/json\" -H \"x-webhook-secret: AN71N1DB1f2FUgcunlSpmqBykEDZLxDCCYz9ElyKi98\" -d '{\"phone_number\":\"+5218442891397\",\"raw_content\":\"test con el 1 que mete meta - prueba normalizacion\",\"source\":\"whatsapp\"}')"
     ]
   }
 }
