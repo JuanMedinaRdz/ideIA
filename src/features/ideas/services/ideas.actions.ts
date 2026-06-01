@@ -45,6 +45,7 @@ export async function updateIdeaAction(
     await updateIdea(id, input);
     revalidatePath("/dashboard");
     revalidatePath("/inbox");
+    revalidatePath("/kanban");
     return { ok: true, data: undefined };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Error desconocido" };
