@@ -8,7 +8,10 @@
       "Bash(curl -s -X POST \"https://ide-ia-chi.vercel.app/api/webhooks/n8n\" -H \"content-type: application/json\" -H \"x-webhook-secret: AN71N1DB1f2FUgcunlSpmqBykEDZLxDCCYz9ElyKi98\" -d '{\"phone_number\":\"+5218442891397\",\"raw_content\":\"test fix mexico v2\",\"source\":\"whatsapp\"}')",
       "PowerShell(pnpm add @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities 2>&1)",
       "PowerShell($env:NEXT_PUBLIC_SUPABASE_URL=\"https://placeholder.supabase.co\"; $env:NEXT_PUBLIC_SUPABASE_ANON_KEY=\"placeholder-anon-key\"; pnpm build 2>&1 | Select-Object -Last 25)",
-      "PowerShell($env:NEXT_PUBLIC_SUPABASE_URL=\"https://placeholder.supabase.co\"; $env:NEXT_PUBLIC_SUPABASE_ANON_KEY=\"placeholder-anon-key\"; pnpm build 2>&1 | Select-Object -Last 10)"
+      "PowerShell($env:NEXT_PUBLIC_SUPABASE_URL=\"https://placeholder.supabase.co\"; $env:NEXT_PUBLIC_SUPABASE_ANON_KEY=\"placeholder-anon-key\"; pnpm build 2>&1 | Select-Object -Last 10)",
+      "PowerShell(pnpm add -D @playwright/test 2>&1)",
+      "PowerShell(pnpm exec playwright install chromium 2>&1)",
+      "PowerShell(pnpm exec playwright test --reporter=list 2>&1)"
     ]
   }
 }

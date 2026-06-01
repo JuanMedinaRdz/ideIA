@@ -88,12 +88,17 @@ pnpm dlx supabase gen types typescript --project-id <ref> > src/types/database.t
 
 ## Comandos
 
-| Comando         | Qué hace                               |
-| --------------- | -------------------------------------- |
-| `pnpm dev`      | Dev server con HMR                     |
-| `pnpm build`    | Build de producción                    |
-| `pnpm start`    | Servir el build                        |
-| `pnpm lint`     | ESLint                                 |
+| Comando                  | Qué hace                                                    |
+| ------------------------ | ----------------------------------------------------------- |
+| `pnpm dev`               | Dev server con HMR (webpack, no Turbopack)                  |
+| `pnpm build`             | Build de producción                                          |
+| `pnpm start`             | Servir el build                                              |
+| `pnpm lint`              | ESLint                                                       |
+| `pnpm test:e2e`          | Playwright E2E contra prod (https://ide-ia-chi.vercel.app)  |
+| `pnpm test:e2e:ui`       | Playwright en modo UI (modo interactivo)                     |
+| `pnpm test:e2e:headed`   | Tests visibles en navegador real                             |
+| `pnpm test:e2e:report`   | Abrir el último reporte HTML                                 |
+| `pnpm test:e2e:local`    | Tests contra `http://localhost:3000` (necesitas `pnpm dev`) |
 
 ---
 
@@ -284,6 +289,68 @@ En ~5-10 segundos, las 3 deben aparecer estructuradas en
 
 ---
 
+## Testing E2E con Playwright (Fase 7)
+
+Tests críticos que validan que la app sigue funcionando end-to-end después de cada deploy.
+
+### Estructura
+
+```
+src/tests/
+├── pages/              ← Page Object Model
+│   ├── base.page.ts    ← clase abstracta común
+│   ├── landing.page.ts
+│   └── login.page.ts
+└── e2e/                ← specs
+    ├── landing.spec.ts     ← landing pública + SEO
+    ├── auth-gate.spec.ts   ← 7 rutas privadas → /login
+    ├── login-form.spec.ts  ← validación cliente del form
+    └── webhook.spec.ts     ← 401 sin secret, 401 con secret malo, 405 GET
+```
+
+### Correr
+
+```powershell
+# Contra Vercel (default)
+pnpm test:e2e
+
+# Modo UI interactivo (recomendado para desarrollo)
+pnpm test:e2e:ui
+
+# Contra localhost (requiere pnpm dev en otra terminal)
+pnpm test:e2e:local
+
+# Ver el último reporte HTML
+pnpm test:e2e:report
+```
+
+### Patrón Page Object Model
+
+Selectores y acciones viven en `pages/`, los `spec.ts` solo hacen aserciones. Cuando cambia la UI, tocas un solo archivo (el Page) y los tests siguen funcionando.
+
+```typescript
+// landing.page.ts (POM)
+get heading() { return this.page.getByRole("heading", { name: /Captura ideas/i }); }
+
+// landing.spec.ts (test)
+await expect(landing.heading).toBeVisible();
+```
+
+### Qué cubrimos hoy (17 tests, ~10s contra prod)
+
+- Landing renderiza, SEO OK, CTAs navegan.
+- 7 rutas privadas redirigen a /login sin sesión (auth gate funcional).
+- Form de login: render, botón disabled sin email, loading state.
+- Webhook: 401 sin/con-secret-malo, 405 con GET.
+
+### Lo que NO cubrimos (intencional)
+
+- Login completo end-to-end (requiere interceptar Resend SMTP).
+- Crear/editar ideas autenticado (requiere seed de usuario con session token).
+- Esos tests vienen con setup de fixtures + test user en una siguiente iteración.
+
+---
+
 ## Atajos de teclado
 
 | Atajo  | Acción                |
@@ -302,8 +369,8 @@ En ~5-10 segundos, las 3 deben aparecer estructuradas en
 - ✅ **Fase 5** — OpenAI: estructuración automática + tracking de uso.
 - ✅ **Fase 6** — Detalle de idea editable, re-estructuración IA, búsqueda con filtros, skeletons, toasts, optimistic favorito, animaciones stagger.
 - ⏳ **Fase 8** — Deploy a Vercel.
-- ✅ **Fase 9** — WhatsApp + n8n + Whisper + Vision.
-- ⏳ **Fase 7** — Playwright E2E (al final, una vez todo lo demás está en prod).
+- ✅ **Fase 9** — WhatsApp + n8n + Whisper + Vision + attachments en Supabase Storage.
+- ✅ **Fase 7** — Playwright E2E con Page Object Model.
 
 ---
 
