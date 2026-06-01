@@ -1,65 +1,95 @@
-import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight, MessageSquareText, Sparkles, Zap } from "lucide-react";
 
+/**
+ * Landing minimalista. Sirve dos propósitos:
+ *  1. Mostrar de qué va la app.
+ *  2. Verificar que el theme dark + tokens HSL renderizan correctamente.
+ *
+ * En Fase 2 reemplazaremos esto por la home pública real (hero + features +
+ * CTA a /signup) y moveremos el dashboard a (dashboard)/dashboard.
+ */
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <main className="relative isolate flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-16">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-primary/20 blur-[120px]"
+      />
+
+      <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
+        <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/50 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur-sm">
+          <Sparkles className="size-3 text-primary" />
+          Fase 1 — Setup completado
+        </span>
+
+        <h1 className="mt-6 text-5xl font-semibold tracking-tight sm:text-6xl">
+          Captura ideas.
+          <br />
+          <span className="bg-gradient-to-br from-foreground to-muted-foreground bg-clip-text text-transparent">
+            Deja que la IA las organice.
+          </span>
+        </h1>
+
+        <p className="mt-6 max-w-lg text-balance text-base text-muted-foreground sm:text-lg">
+          Envía un mensaje a WhatsApp — texto, voz o imagen — y aparece estructurado,
+          categorizado y listo para accionar en tu workspace.
+        </p>
+
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+          <Link
+            href="/dashboard"
+            className="group inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            Ir al dashboard
+            <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
+          </Link>
+          <Link
+            href="#"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card/50 px-5 py-2.5 text-sm font-medium text-foreground backdrop-blur-sm transition hover:bg-card"
           >
-            Documentation
-          </a>
+            Conectar WhatsApp
+          </Link>
         </div>
-      </main>
+
+        <div className="mt-16 grid w-full grid-cols-1 gap-4 sm:grid-cols-3">
+          <FeatureCard
+            icon={<MessageSquareText className="size-4" />}
+            title="Captura sin fricción"
+            description="Texto, voz e imagen desde el chat que ya usas."
+          />
+          <FeatureCard
+            icon={<Sparkles className="size-4" />}
+            title="Organización IA"
+            description="Título, resumen, tags y prioridad automáticos."
+          />
+          <FeatureCard
+            icon={<Zap className="size-4" />}
+            title="Acción inmediata"
+            description="Próximos pasos sugeridos por contexto."
+          />
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function FeatureCard({
+  icon,
+  title,
+  description,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-card/40 p-4 text-left backdrop-blur-sm transition hover:bg-card/70">
+      <div className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
+        {icon}
+      </div>
+      <h3 className="mt-3 text-sm font-medium text-foreground">{title}</h3>
+      <p className="mt-1 text-xs text-muted-foreground">{description}</p>
     </div>
   );
 }

@@ -1,0 +1,87 @@
+{
+  "name": "ideIA - WhatsApp Ingest",
+  "_comment": "Skeleton inicial. Imports a tu instancia n8n (Settings → Import from File). Sustituye las credenciales y el host del webhook por los tuyos.",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ideia-whatsapp",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "trigger-webhook",
+      "name": "WhatsApp Webhook In",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            { "value1": "={{$json.body.type}}", "operation": "equal", "value2": "text" }
+          ]
+        }
+      },
+      "id": "if-text",
+      "name": "¿Es texto?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "_placeholder": "Fase 5: aquí va el nodo OpenAI. Prompt: estructurar el mensaje en {title, summary, category, tags, priority, ai_suggestions}. Por ahora pasamos directo con title=texto crudo."
+      },
+      "id": "structure-ai",
+      "name": "OpenAI Structure (Fase 5)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [680, 240]
+    },
+    {
+      "parameters": {
+        "url": "https://TU-APP.vercel.app/api/webhooks/n8n",
+        "options": {},
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-webhook-secret",
+              "value": "={{$env.N8N_WEBHOOK_SECRET}}"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"phone_number\": \"{{$json.body.from}}\",\n  \"title\": \"{{$json.body.text}}\",\n  \"summary\": \"\",\n  \"source\": \"whatsapp\",\n  \"priority\": \"medium\"\n}",
+        "requestMethod": "POST"
+      },
+      "id": "post-to-ideia",
+      "name": "POST to ideIA webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [900, 240]
+    }
+  ],
+  "connections": {
+    "WhatsApp Webhook In": {
+      "main": [[{ "node": "¿Es texto?", "type": "main", "index": 0 }]]
+    },
+    "¿Es texto?": {
+      "main": [
+        [{ "node": "OpenAI Structure (Fase 5)", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "OpenAI Structure (Fase 5)": {
+      "main": [[{ "node": "POST to ideIA webhook", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {},
+  "active": false
+}
