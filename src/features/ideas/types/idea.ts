@@ -27,6 +27,10 @@ export interface Idea {
   aiSuggestions: string[];
   attachmentUrl?: string;
   attachmentType?: string;
+  /** ISO 8601 timestamp con TZ. null si la idea no es un evento agendado. */
+  eventAt?: string;
+  eventDurationMinutes?: number;
+  eventCompleted: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -47,6 +51,9 @@ export interface IdeaRow {
   ai_suggestions: string[];
   attachment_url: string | null;
   attachment_type: string | null;
+  event_at: string | null;
+  event_duration_minutes: number | null;
+  event_completed: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -66,6 +73,9 @@ export function rowToIdea(row: IdeaRow): Idea {
     aiSuggestions: row.ai_suggestions,
     attachmentUrl: row.attachment_url ?? undefined,
     attachmentType: row.attachment_type ?? undefined,
+    eventAt: row.event_at ?? undefined,
+    eventDurationMinutes: row.event_duration_minutes ?? undefined,
+    eventCompleted: row.event_completed,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

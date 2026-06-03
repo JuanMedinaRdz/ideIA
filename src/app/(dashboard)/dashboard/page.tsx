@@ -1,10 +1,12 @@
-import { Inbox, Sparkles, CheckCircle2, Flame, ArrowUpRight } from "lucide-react";
+import { Inbox, Sparkles, CheckCircle2, Flame, ArrowUpRight, Calendar } from "lucide-react";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { IdeaCard } from "@/features/ideas/components/idea-card";
 import { NewIdeaDialog } from "@/features/ideas/components/new-idea-dialog";
 import { getIdeas, getIdeaStats } from "@/features/ideas/services/ideas.service";
+import { getUpcomingEvents } from "@/features/calendar/services/calendar.service";
+import { EventBadge } from "@/features/calendar/components/event-badge";
 import { timeAgo } from "@/lib/date";
 
 /**
@@ -16,7 +18,11 @@ import { timeAgo } from "@/lib/date";
  * fuentes de datos.
  */
 export default async function DashboardPage() {
-  const [ideas, stats] = await Promise.all([getIdeas(), getIdeaStats()]);
+  const [ideas, stats, upcoming] = await Promise.all([
+    getIdeas(),
+    getIdeaStats(),
+    getUpcomingEvents(4),
+  ]);
   const recent = ideas.slice(0, 4);
 
   return (
@@ -101,12 +107,42 @@ export default async function DashboardPage() {
             </Card>
           </div>
 
-          <Card className="p-4">
-            <h3 className="text-sm font-medium">Conecta WhatsApp</h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              En Fase 4 conectamos n8n para que envíes ideas desde tu chat.
-            </p>
-          </Card>
+          <div>
+            <div className="mb-3 flex items-baseline justify-between">
+              <h2 className="text-sm font-medium text-foreground">Próximos eventos</h2>
+              <Link
+                href="/calendar"
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground transition hover:text-foreground"
+              >
+                Calendario <ArrowUpRight className="size-3" />
+              </Link>
+            </div>
+            {upcoming.length === 0 ? (
+              <Card className="flex items-center gap-2 p-4">
+                <Calendar className="size-4 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">
+                  Cuando una idea tenga fecha, aparece aquí.
+                </p>
+              </Card>
+            ) : (
+              <Card className="divide-y divide-border">
+                {upcoming.map((idea) => (
+                  <Link
+                    key={idea.id}
+                    href={`/ideas/${idea.id}`}
+                    className="flex flex-col gap-1 p-3 transition hover:bg-card/70"
+                  >
+                    <p className="text-xs font-medium text-foreground line-clamp-1">
+                      {idea.title}
+                    </p>
+                    {idea.eventAt && (
+                      <EventBadge eventAt={idea.eventAt} completed={idea.eventCompleted} size="sm" />
+                    )}
+                  </Link>
+                ))}
+              </Card>
+            )}
+          </div>
         </aside>
       </section>
     </div>

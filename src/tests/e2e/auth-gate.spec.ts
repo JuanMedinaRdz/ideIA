@@ -11,6 +11,7 @@ const PRIVATE_ROUTES = [
   "/dashboard",
   "/inbox",
   "/kanban",
+  "/calendar",
   "/search",
   "/insights",
   "/settings",

@@ -7,6 +7,7 @@ import { Star, GripVertical } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { PriorityDot } from "./priority-dot";
 import { AttachmentThumb } from "./attachment-preview";
+import { EventBadge } from "@/features/calendar/components/event-badge";
 import { cn } from "@/lib/utils";
 import type { Idea } from "@/features/ideas/types/idea";
 
@@ -67,6 +68,10 @@ export function KanbanCard({ idea }: { idea: Idea }) {
               <Star className="size-3 shrink-0 fill-amber-400 text-amber-400" />
             )}
           </div>
+
+          {idea.eventAt && (
+            <EventBadge eventAt={idea.eventAt} completed={idea.eventCompleted} size="sm" />
+          )}
 
           {idea.tags.length > 0 && (
             <div className="flex flex-wrap items-center gap-1">

@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { PriorityDot } from "./priority-dot";
 import { AttachmentPreview } from "./attachment-preview";
+import { EventBadge } from "@/features/calendar/components/event-badge";
 import { timeAgo } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import {
@@ -67,6 +68,8 @@ export function IdeaDetail({ idea }: { idea: Idea }) {
   const [summary, setSummary] = useState(idea.summary);
   const [description, setDescription] = useState(idea.description ?? "");
   const [priority, setPriority] = useState<IdeaPriority>(idea.priority);
+  // datetime-local quiere "YYYY-MM-DDTHH:MM" en HORA LOCAL (no UTC). Conversión:
+  const [eventAtLocal, setEventAtLocal] = useState(() => isoToLocalInput(idea.eventAt));
 
   // useOptimistic: actualiza la UI inmediatamente, espera al server después.
   // Si falla, React revierte automáticamente al valor original.
@@ -210,6 +213,57 @@ export function IdeaDetail({ idea }: { idea: Idea }) {
         </div>
       )}
 
+      {/* Evento — datetime input. Si hay event_at muestra badge + control para editar/quitar. */}
+      <div>
+        <div className="mb-1.5 flex items-center justify-between gap-2">
+          <p className="text-xs font-medium text-muted-foreground">Evento</p>
+          {idea.eventAt && (
+            <EventBadge eventAt={idea.eventAt} completed={idea.eventCompleted} size="sm" />
+          )}
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="datetime-local"
+            value={eventAtLocal}
+            onChange={(e) => setEventAtLocal(e.target.value)}
+            onBlur={() => {
+              const iso = localInputToIso(eventAtLocal);
+              if (iso !== (idea.eventAt ?? null)) {
+                startTransition(async () => {
+                  const result = await updateIdeaAction(idea.id, { eventAt: iso });
+                  if (!result.ok) {
+                    toast.error("No se pudo guardar la fecha", { description: result.error });
+                    setEventAtLocal(isoToLocalInput(idea.eventAt));
+                  } else {
+                    toast.success(iso ? "Evento agendado" : "Evento eliminado");
+                    router.refresh();
+                  }
+                });
+              }
+            }}
+            disabled={pending}
+            className="flex h-9 flex-1 rounded-md border border-input bg-card/40 px-3 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background [color-scheme:dark]"
+          />
+          {idea.eventAt && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setEventAtLocal("");
+                startTransition(async () => {
+                  await updateIdeaAction(idea.id, { eventAt: null });
+                  toast.success("Evento eliminado");
+                  router.refresh();
+                });
+              }}
+              disabled={pending}
+            >
+              Quitar
+            </Button>
+          )}
+        </div>
+      </div>
+
       {/* Prioridad — selector */}
       <div>
         <p className="mb-1.5 text-xs font-medium text-muted-foreground">Prioridad</p>
@@ -327,4 +381,23 @@ function RawContentCollapsible({ ideaId }: { ideaId: string }) {
   // saturar — pero dejamos el hook listo.
   void ideaId;
   return null;
+}
+
+/**
+ * `<input type="datetime-local">` quiere "YYYY-MM-DDTHH:MM" en hora LOCAL.
+ * Pero la DB guarda ISO con TZ. Conversión bidireccional aquí.
+ */
+function isoToLocalInput(iso?: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function localInputToIso(local: string): string | null {
+  if (!local) return null;
+  const d = new Date(local);
+  if (isNaN(d.getTime())) return null;
+  return d.toISOString();
 }

@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   Inbox,
   KanbanSquare,
+  Calendar,
   Search,
   Sparkles,
   Settings,
@@ -24,6 +25,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, shortcut: "G D" },
   { label: "Inbox", href: "/inbox", icon: Inbox, shortcut: "G I" },
   { label: "Kanban", href: "/kanban", icon: KanbanSquare, shortcut: "G K" },
+  { label: "Calendario", href: "/calendar", icon: Calendar, shortcut: "G C" },
   { label: "Buscar", href: "/search", icon: Search, shortcut: "/" },
   { label: "Insights IA", href: "/insights", icon: Sparkles },
 ];

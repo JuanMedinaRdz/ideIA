@@ -187,6 +187,8 @@ export async function POST(request: Request) {
     priority: IdeaPriority;
     ai_suggestions: string[];
     raw_content: string | null;
+    event_at: string | null;
+    event_duration_minutes: number | null;
   };
 
   if (isStructuredIdea(body)) {
@@ -201,6 +203,8 @@ export async function POST(request: Request) {
         ? body.ai_suggestions.slice(0, 10)
         : [],
       raw_content: null,
+      event_at: null,
+      event_duration_minutes: null,
     };
   } else {
     // isRawIdea: estructurar con OpenAI
@@ -215,6 +219,8 @@ export async function POST(request: Request) {
         priority: ai.priority,
         ai_suggestions: ai.ai_suggestions,
         raw_content: body.raw_content.slice(0, 4000),
+        event_at: ai.event_at,
+        event_duration_minutes: ai.event_duration_minutes,
       };
     } catch (e) {
       await admin.from("ingest_events").insert({
@@ -254,6 +260,8 @@ export async function POST(request: Request) {
       raw_content: structured.raw_content,
       attachment_url: attachmentUrl,
       attachment_type: attachmentType,
+      event_at: structured.event_at,
+      event_duration_minutes: structured.event_duration_minutes,
     })
     .select("id")
     .single();

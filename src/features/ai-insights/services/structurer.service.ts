@@ -27,7 +27,14 @@ export interface StructuredIdea {
   tags: string[];
   priority: IdeaPriority;
   ai_suggestions: string[];
+  /** ISO 8601 con TZ si el texto menciona fecha/hora. null si no. */
+  event_at: string | null;
+  /** Duración estimada en minutos. 60 por defecto si hay event_at. */
+  event_duration_minutes: number | null;
 }
+
+/** Zona horaria por defecto. Mover a config user en Fase 11. */
+const DEFAULT_TZ = "America/Mexico_City";
 
 interface StructureOptions {
   /** Para asociar el log en `ai_usage`. Si no se conoce aún, omite. */
@@ -36,27 +43,68 @@ interface StructureOptions {
   source?: IdeaSource;
 }
 
-const SYSTEM_PROMPT = `Eres un asistente que organiza ideas/notas/pensamientos de un usuario.
+/**
+ * Construye el prompt sistema incluyendo contexto temporal. La hora actual y
+ * la zona horaria se inyectan en cada llamada — sin eso la IA no puede
+ * interpretar "mañana", "el viernes", "en 2 horas", etc.
+ */
+function buildSystemPrompt(): string {
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat("es-MX", {
+    timeZone: DEFAULT_TZ,
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const currentHuman = formatter.format(now);
+  const currentIso = now.toISOString();
+
+  return `Eres un asistente que organiza ideas/notas/pensamientos de un usuario.
 Tu trabajo es transformar texto crudo (que puede venir de WhatsApp, voz transcrita, o web) en una idea estructurada en español.
 
-Reglas:
+CONTEXTO TEMPORAL — CRÍTICO:
+- Ahora mismo es: ${currentHuman} (zona horaria del usuario: ${DEFAULT_TZ}).
+- En ISO 8601 UTC: ${currentIso}.
+- Cuando el texto mencione fechas/horas relativas ("mañana", "el viernes", "en 2 horas", "hoy a las 8pm", "esta tarde"), calcula la fecha+hora absoluta DESDE ese momento actual y devuélvela en event_at en formato ISO 8601 con offset de zona (ejemplo: "2026-06-03T20:00:00-06:00").
+- Si el usuario no especifica hora pero sí día, asume las 09:00 del día indicado.
+- Si el texto NO menciona ninguna fecha/hora, event_at debe ser null.
+
+Reglas para el resto de campos:
 - TITLE: máximo 80 caracteres, en imperativo o sustantivo claro. No uses comillas. Refleja la acción/tema principal.
 - SUMMARY: 1-2 frases (máx 200 caracteres) que resuman el contenido completo. Conserva información clave: fechas, números, nombres.
-- CATEGORY: una palabra. Categorías sugeridas: Producto, Contenido, Personal, Ingeniería, Bug, Marketing, Investigación, Admin. Inventa otra si encaja mejor.
-- TAGS: 2-4 etiquetas en minúscula, una palabra cada una. Específicas (ej: "onboarding", "playwright"), no genéricas (ej: "trabajo", "tarea").
-- PRIORITY: detecta urgencia explícita ("urgente", "antes del viernes", "hoy") o implícita.
-  - urgent: bloqueante o fecha en <48h
+- CATEGORY: una palabra. Sugeridas: Producto, Contenido, Personal, Ingeniería, Bug, Marketing, Investigación, Admin. Inventa otra si encaja mejor.
+- TAGS: 2-4 etiquetas en minúscula, una palabra cada una. Específicas.
+- PRIORITY: detecta urgencia.
+  - urgent: bloqueante o fecha en <48h (incluyendo "hoy" y "mañana")
   - high: importante con fecha en esta semana
   - medium: importante pero sin fecha apremiante (default)
   - low: idea o nota sin presión
-- AI_SUGGESTIONS: 1-3 próximos pasos concretos y accionables. Empieza cada uno con verbo en infinitivo. NO repitas el contenido de la idea, propón ACCIONES.
+- AI_SUGGESTIONS: 1-3 próximos pasos concretos. Empieza con verbo en infinitivo.
+- EVENT_DURATION_MINUTES: si hay event_at, estima duración razonable según el tipo (reunión: 30-60, entrevista: 45, llamada rápida: 15, evento: 120). Si no hay event_at, null.
 
 Si el input es muy corto o ambiguo, infiere lo mínimo razonable sin inventar contexto que no esté.`;
+}
 
+// Strict mode de OpenAI requiere TODOS los campos en `required` y `properties`.
+// Para hacer un campo "opcional", lo declaramos con type: ["string", "null"]
+// o equivalente y dejamos que el modelo elija null cuando no aplica.
 const RESPONSE_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["title", "summary", "category", "tags", "priority", "ai_suggestions"],
+  required: [
+    "title",
+    "summary",
+    "category",
+    "tags",
+    "priority",
+    "ai_suggestions",
+    "event_at",
+    "event_duration_minutes",
+  ],
   properties: {
     title: { type: "string", maxLength: 200 },
     summary: { type: "string", maxLength: 800 },
@@ -71,6 +119,15 @@ const RESPONSE_SCHEMA = {
       type: "array",
       items: { type: "string", maxLength: 200 },
       maxItems: 5,
+    },
+    event_at: {
+      type: ["string", "null"],
+      description: "ISO 8601 con offset de TZ. null si no hay fecha/hora.",
+    },
+    event_duration_minutes: {
+      type: ["integer", "null"],
+      minimum: 5,
+      maximum: 1440,
     },
   },
 } as const;
@@ -93,7 +150,7 @@ export async function structureIdea(
       model: DEFAULT_MODEL,
       temperature: 0.3,
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: buildSystemPrompt() },
         { role: "user", content: trimmed },
       ],
       response_format: {

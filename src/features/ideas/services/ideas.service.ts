@@ -31,10 +31,13 @@ export interface CreateIdeaInput {
   status?: IdeaStatus;
   source?: IdeaSource;
   aiSuggestions?: string[];
+  eventAt?: string | null;
+  eventDurationMinutes?: number | null;
 }
 
 export interface UpdateIdeaInput extends Partial<CreateIdeaInput> {
   isFavorite?: boolean;
+  eventCompleted?: boolean;
 }
 
 export async function getIdeas(): Promise<Idea[]> {
@@ -80,6 +83,8 @@ export async function createIdea(input: CreateIdeaInput): Promise<Idea> {
       status: input.status ?? "inbox",
       source: input.source ?? "web",
       ai_suggestions: input.aiSuggestions ?? [],
+      event_at: input.eventAt ?? null,
+      event_duration_minutes: input.eventDurationMinutes ?? null,
     })
     .select("*")
     .single();
@@ -104,6 +109,9 @@ export async function updateIdea(id: string, input: UpdateIdeaInput): Promise<Id
   if (input.source !== undefined) patch.source = input.source;
   if (input.isFavorite !== undefined) patch.is_favorite = input.isFavorite;
   if (input.aiSuggestions !== undefined) patch.ai_suggestions = input.aiSuggestions;
+  if (input.eventAt !== undefined) patch.event_at = input.eventAt;
+  if (input.eventDurationMinutes !== undefined) patch.event_duration_minutes = input.eventDurationMinutes;
+  if (input.eventCompleted !== undefined) patch.event_completed = input.eventCompleted;
 
   const { data, error } = await supabase
     .from("ideas")

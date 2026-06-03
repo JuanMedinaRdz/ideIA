@@ -3,6 +3,7 @@ import { Star, MessageSquare, Mic, Image as ImageIcon, Globe } from "lucide-reac
 import { Card } from "@/components/ui/card";
 import { PriorityDot } from "./priority-dot";
 import { AttachmentBadge, AttachmentThumb } from "./attachment-preview";
+import { EventBadge } from "@/features/calendar/components/event-badge";
 import { timeAgo } from "@/lib/date";
 import { cn } from "@/lib/utils";
 import type { Idea, IdeaSource } from "@/features/ideas/types/idea";
@@ -47,6 +48,12 @@ export function IdeaCard({ idea }: { idea: Idea }) {
             )}
           </div>
           <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{idea.summary}</p>
+
+          {idea.eventAt && (
+            <div className="mt-2">
+              <EventBadge eventAt={idea.eventAt} completed={idea.eventCompleted} />
+            </div>
+          )}
 
           <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-1">

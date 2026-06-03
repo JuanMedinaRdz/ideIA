@@ -58,6 +58,10 @@ export interface Database {
           raw_content: string | null;
           attachment_url: string | null;
           attachment_type: string | null;
+          event_at: string | null;
+          event_duration_minutes: number | null;
+          event_completed: boolean;
+          google_calendar_event_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -76,6 +80,10 @@ export interface Database {
           raw_content?: string | null;
           attachment_url?: string | null;
           attachment_type?: string | null;
+          event_at?: string | null;
+          event_duration_minutes?: number | null;
+          event_completed?: boolean;
+          google_calendar_event_id?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["ideas"]["Insert"]>;
         Relationships: [];
