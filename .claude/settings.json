@@ -15,7 +15,9 @@
       "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" -X GET \"https://ide-ia-chi.vercel.app/api/webhooks/n8n\")",
       "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" -X POST \"https://ide-ia-chi.vercel.app/api/webhooks/n8n\" -H \"content-type: application/json\" -d \"{}\")",
       "Bash(curl -s https://ide-ia-chi.vercel.app/_next/static/chunks/)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://ide-ia-chi.vercel.app/calendar)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://ide-ia-chi.vercel.app/calendar)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://ide-ia-chi.vercel.app/api/google/connect)",
+      "PowerShell($id = \"974646659568-4r1abcog0kcmfufcn5i10t6j7jf6htpo.apps.googleusercontent.com\"; $content = Get-Content .env.local; if \\($content -match '^GOOGLE_OAUTH_CLIENT_ID='\\) { $newContent = $content | ForEach-Object { if \\($_ -match '^GOOGLE_OAUTH_CLIENT_ID='\\) { \"GOOGLE_OAUTH_CLIENT_ID=$id\" } else { $_ } } } else { $newContent = $content + \"GOOGLE_OAUTH_CLIENT_ID=$id\" }; if \\(-not \\($newContent -match '^GOOGLE_OAUTH_CLIENT_SECRET='\\)\\) { $newContent = $newContent + \"GOOGLE_OAUTH_CLIENT_SECRET=GOCSPX-PEGA_AQUI_TU_SECRET\" }; $newContent | Set-Content .env.local -Encoding utf8; \"Listo. Estado de las 2 vars en .env.local:\"; \\(Get-Content .env.local | Where-Object { $_ -match '^GOOGLE_OAUTH' }\\) | ForEach-Object { if \\($_ -match '^\\([A-Z_]+\\)=\\(.+\\)$'\\) { $k = $matches[1]; $v = $matches[2]; if \\($v.Length -gt 25\\) { \"$k = $\\($v.Substring\\(0,15\\)\\)...$\\($v.Substring\\($v.Length-10\\)\\)\" } else { \"$k = $v\" } } })"
     ]
   }
 }
