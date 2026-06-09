@@ -21,4 +21,6 @@ export const serverEnv = {
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
   openAiApiKey: process.env.OPENAI_API_KEY,
   n8nWebhookSecret: process.env.N8N_WEBHOOK_SECRET,
+  googleOAuthClientId: process.env.GOOGLE_OAUTH_CLIENT_ID,
+  googleOAuthClientSecret: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
 } as const;

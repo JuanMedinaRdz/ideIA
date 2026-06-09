@@ -14,7 +14,8 @@
       "PowerShell(pnpm exec playwright test --reporter=list 2>&1)",
       "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" -X GET \"https://ide-ia-chi.vercel.app/api/webhooks/n8n\")",
       "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" -X POST \"https://ide-ia-chi.vercel.app/api/webhooks/n8n\" -H \"content-type: application/json\" -d \"{}\")",
-      "Bash(curl -s https://ide-ia-chi.vercel.app/_next/static/chunks/)"
+      "Bash(curl -s https://ide-ia-chi.vercel.app/_next/static/chunks/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://ide-ia-chi.vercel.app/calendar)"
     ]
   }
 }

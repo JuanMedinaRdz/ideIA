@@ -141,6 +141,28 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["ingest_events"]["Insert"]>;
         Relationships: [];
       };
+      google_calendar_tokens: {
+        Row: {
+          user_id: string;
+          access_token: string;
+          refresh_token: string;
+          expires_at: string;
+          scope: string;
+          token_type: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          access_token: string;
+          refresh_token: string;
+          expires_at: string;
+          scope: string;
+          token_type?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["google_calendar_tokens"]["Insert"]>;
+        Relationships: [];
+      };
       ai_usage: {
         Row: {
           id: string;

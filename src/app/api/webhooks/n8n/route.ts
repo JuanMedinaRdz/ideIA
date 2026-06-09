@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { verifyWebhookSecret } from "@/lib/webhook-auth";
 import { structureIdea } from "@/features/ai-insights/services/structurer.service";
+import { syncIdeaToGoogle } from "@/features/google/services/google-sync.service";
 import type { IdeaPriority, IdeaSource, IdeaStatus } from "@/features/ideas/types/idea";
 
 /**
@@ -284,6 +285,12 @@ export async function POST(request: Request) {
     idea_id: idea.id,
     payload: body as never,
   });
+
+  // Si la idea tiene evento + el user tiene Google conectado, sync. Fire-and-
+  // forget para no bloquear la respuesta a Meta (Meta espera <20s).
+  if (structured.event_at) {
+    void syncIdeaToGoogle(idea.id);
+  }
 
   return NextResponse.json({ ok: true, idea_id: idea.id }, { status: 201 });
 }

@@ -351,6 +351,62 @@ await expect(landing.heading).toBeVisible();
 
 ---
 
+## Google Calendar sync (Fase 10B)
+
+Cuando una idea tiene `event_at`, la app crea/actualiza un evento en el
+Google Calendar primario del usuario. Si la idea se borra o se le quita la
+fecha, el evento Google también se borra.
+
+### Setup Google Cloud Console (una sola vez)
+
+1. https://console.cloud.google.com → New Project → `ideIA`.
+2. **APIs & Services → Library** → busca "Google Calendar API" → **Enable**.
+3. **OAuth consent screen** → External → completa:
+   - App name: `ideIA`
+   - User support email + Developer contact: tu email
+   - Scopes: añade `.../auth/calendar.events`
+   - Test users: añade tu Gmail (sin esto no podrás autenticarte en modo Testing)
+4. **Credentials → Create Credentials → OAuth client ID**:
+   - Type: Web application
+   - Authorized JavaScript origins: `http://localhost:3000`, `https://TU-APP.vercel.app`
+   - Authorized redirect URIs:
+     - `http://localhost:3000/api/google/callback`
+     - `https://TU-APP.vercel.app/api/google/callback`
+5. Copia **Client ID** y **Client Secret** y añade a tu `.env.local` (y Vercel):
+   ```
+   GOOGLE_OAUTH_CLIENT_ID=xxx-yyy.apps.googleusercontent.com
+   GOOGLE_OAUTH_CLIENT_SECRET=GOCSPX-...
+   ```
+
+### Migración 0006
+
+Aplica [`supabase/migrations/0006_google_tokens.sql`](supabase/migrations/0006_google_tokens.sql) en el SQL Editor → Run.
+
+### Cómo usarlo
+
+1. Ve a `/settings` → "Conectar Google Calendar".
+2. Acepta el consent screen de Google.
+3. Vuelves a `/settings` con badge "Conectado".
+4. Cualquier idea (nueva o existente) con `event_at` se sincroniza
+   automáticamente en background.
+
+### Arquitectura
+
+- **OAuth en nuestro backend, no en n8n** — así sincronizamos ideas creadas
+  desde web/WhatsApp/voz/imagen por igual, con tokens por usuario.
+- `lib/google/oauth.ts` — auth URL + token exchange + refresh, todo con fetch.
+- `lib/google/calendar.ts` — REST API directa al endpoint events.
+- `features/google/services/google-tokens.service.ts` — DB + auto-refresh con
+  margen de 60s antes de expirar.
+- `features/google/services/google-sync.service.ts` — orquesta create/update/
+  delete según diff entre idea y Google. Fire-and-forget desde el llamador
+  para no añadir latencia ni bloquear si Google está caído.
+- Tabla `google_calendar_tokens`: 1 fila por user. RLS SELECT propio; mutaciones
+  solo via service-role.
+- CSRF: cookie `google_oauth_state` httpOnly con random 32-byte, validado en callback.
+
+---
+
 ## Atajos de teclado
 
 | Atajo  | Acción                |

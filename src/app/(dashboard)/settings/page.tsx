@@ -3,8 +3,10 @@ import {
   getActivePairingCode,
   getLinkedPhones,
 } from "@/features/phone-linking/services/pairing.service";
+import { isConnected as isGoogleConnected } from "@/features/google/services/google-tokens.service";
 import { PairingCard } from "@/features/phone-linking/components/pairing-card";
 import { LinkedPhonesList } from "@/features/phone-linking/components/linked-phones-list";
+import { GoogleCalendarCard } from "@/features/google/components/google-calendar-card";
 
 export default async function SettingsPage() {
   const supabase = await createSupabaseServerClient();
@@ -14,9 +16,10 @@ export default async function SettingsPage() {
   // El layout ya garantiza user, pero TS no lo sabe — !user es imposible aquí.
   if (!user) return null;
 
-  const [pairing, phones] = await Promise.all([
+  const [pairing, phones, googleConnected] = await Promise.all([
     getActivePairingCode(user.id),
     getLinkedPhones(user.id),
+    isGoogleConnected(user.id),
   ]);
 
   return (
@@ -24,7 +27,7 @@ export default async function SettingsPage() {
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Ajustes</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Conecta WhatsApp para capturar ideas desde tu chat.
+          Conecta WhatsApp y Google Calendar para llevar tus ideas a todos lados.
         </p>
       </header>
 
@@ -38,6 +41,8 @@ export default async function SettingsPage() {
         <h2 className="text-sm font-medium text-foreground">Números enlazados</h2>
         <LinkedPhonesList phones={phones} />
       </div>
+
+      <GoogleCalendarCard connected={googleConnected} />
     </div>
   );
 }

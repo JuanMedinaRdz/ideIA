@@ -10,6 +10,7 @@
 //     lógica que ya está en la DB.
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { syncIdeaToGoogle } from "@/features/google/services/google-sync.service";
 import {
   rowToIdea,
   type Idea,
@@ -90,6 +91,13 @@ export async function createIdea(input: CreateIdeaInput): Promise<Idea> {
     .single();
 
   if (error) throw error;
+  // Sync con Google Calendar si el user tiene la integración. fire-and-forget:
+  // si Google falla, la idea está creada y no perdemos nada. El sync mismo
+  // hace noop silencioso si no hay tokens, así que no añade latencia para
+  // usuarios que no usan Google.
+  if (data.event_at) {
+    void syncIdeaToGoogle(data.id);
+  }
   return rowToIdea(data);
 }
 
@@ -121,13 +129,49 @@ export async function updateIdea(id: string, input: UpdateIdeaInput): Promise<Id
     .single();
 
   if (error) throw error;
+  // Si el update tocó algo relevante para el evento (event_at, duración,
+  // título o resumen — que van al body del evento Google), sincronizamos.
+  // El sync internamente decide create/update/delete según el estado actual.
+  const eventRelatedKeys = ["event_at", "event_duration_minutes", "title", "summary"];
+  if (eventRelatedKeys.some((k) => k in patch)) {
+    void syncIdeaToGoogle(id);
+  }
   return rowToIdea(data);
 }
 
 export async function deleteIdea(id: string): Promise<void> {
   const supabase = await createSupabaseServerClient();
+  // Antes de borrar: si tenía evento Google, borrarlo allá. La idea misma
+  // y su google_id desaparecen tras el delete, así que no podemos hacerlo
+  // después.
+  const { data: row } = await supabase
+    .from("ideas")
+    .select("user_id, google_calendar_event_id")
+    .eq("id", id)
+    .maybeSingle();
+
   const { error } = await supabase.from("ideas").delete().eq("id", id);
   if (error) throw error;
+
+  if (row?.google_calendar_event_id) {
+    // Sync con un "google_id huérfano": el sync ve la idea ya borrada y
+    // hace noop. Para el delete real necesitamos llamar directo al lib.
+    void deleteOrphanGoogleEvent(row.user_id, row.google_calendar_event_id);
+  }
+}
+
+async function deleteOrphanGoogleEvent(userId: string, googleEventId: string) {
+  try {
+    const { getValidAccessToken } = await import(
+      "@/features/google/services/google-tokens.service"
+    );
+    const { deleteCalendarEvent } = await import("@/lib/google/calendar");
+    const token = await getValidAccessToken(userId);
+    if (token) await deleteCalendarEvent(token, googleEventId);
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error("[google-sync-orphan-delete]", e);
+  }
 }
 
 export interface IdeaStats {
