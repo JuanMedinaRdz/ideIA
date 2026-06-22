@@ -12,6 +12,8 @@ const PRIVATE_ROUTES = [
   "/inbox",
   "/kanban",
   "/calendar",
+  "/tutorials",
+  "/tutorials/00000000-0000-0000-0000-000000000000",
   "/search",
   "/insights",
   "/settings",

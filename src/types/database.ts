@@ -141,6 +141,48 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["ingest_events"]["Insert"]>;
         Relationships: [];
       };
+      tutorials: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          description: string | null;
+          category: string | null;
+          cover_image_url: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          title: string;
+          description?: string | null;
+          category?: string | null;
+          cover_image_url?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["tutorials"]["Insert"]>;
+        Relationships: [];
+      };
+      tutorial_steps: {
+        Row: {
+          id: string;
+          tutorial_id: string;
+          position: number;
+          title: string | null;
+          description: string;
+          image_url: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          tutorial_id: string;
+          position?: number;
+          title?: string | null;
+          description?: string;
+          image_url?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["tutorial_steps"]["Insert"]>;
+        Relationships: [];
+      };
       google_calendar_tokens: {
         Row: {
           user_id: string;
