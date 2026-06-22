@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
@@ -51,6 +51,13 @@ export function TutorialEditor({ tutorial }: { tutorial: TutorialWithSteps }) {
   const [description, setDescription] = useState(tutorial.description ?? "");
   const [pending, startTransition] = useTransition();
   const [deleteArmed, setDeleteArmed] = useState(false);
+
+  // Sync local `steps` con la prop cuando cambia (al router.refresh tras
+  // create/delete/upload, el server vuelve a fetchear y manda nuevo array).
+  // Sin esto, useState ignoraría la nueva prop y la UI quedaría stale.
+  useEffect(() => {
+    setSteps(tutorial.steps);
+  }, [tutorial.steps]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),

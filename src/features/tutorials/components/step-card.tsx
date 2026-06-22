@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
@@ -33,6 +34,7 @@ export function StepCard({
   index: number;
   tutorialId: string;
 }) {
+  const router = useRouter();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: step.id });
 
@@ -63,7 +65,14 @@ export function StepCard({
     }
     startTransition(async () => {
       const result = await deleteStepAction(step.id, tutorialId);
-      if (!result.ok) toast.error("No se pudo borrar", { description: result.error });
+      if (result.ok) {
+        // Disparamos refresh para que el padre re-fetche el array y la
+        // useEffect en TutorialEditor sincronice los steps locales (sin
+        // esto la card borrada se queda en pantalla hasta F5).
+        router.refresh();
+      } else {
+        toast.error("No se pudo borrar", { description: result.error });
+      }
     });
   }
 
