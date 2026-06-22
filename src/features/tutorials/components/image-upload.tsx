@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { ImagePlus, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { uploadStepImageAction } from "../services/upload.actions";
+import { ImageLightbox } from "@/components/shared/image-lightbox";
 import { cn } from "@/lib/utils";
 
 /**
@@ -76,21 +77,25 @@ export function ImageUpload({
         className="hidden"
       />
       {previewUrl ? (
-        <div className="group relative overflow-hidden rounded-lg border border-border">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={previewUrl}
-            alt="Imagen del paso"
-            className={cn(
-              "h-32 w-full object-cover transition-opacity duration-200",
-              pending && "opacity-40",
-            )}
-            loading="lazy"
-          />
-          {pending && (
-            <div className="absolute inset-0 flex items-center justify-center bg-background/40">
-              <Loader2 className="size-5 animate-spin text-primary" />
+        <div className="group relative">
+          {/* Si está subiendo (pending), mostramos preview optimista plano
+              SIN el lightbox — no tiene sentido ampliar algo que aún no se
+              persiste. Una vez sube, el lightbox queda habilitado. */}
+          {pending ? (
+            <div className="relative overflow-hidden rounded-lg border border-border">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={previewUrl}
+                alt="Imagen del paso (subiendo)"
+                className={cn("h-32 w-full object-cover opacity-40")}
+                loading="lazy"
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-background/40">
+                <Loader2 className="size-5 animate-spin text-primary" />
+              </div>
             </div>
+          ) : (
+            <ImageLightbox src={previewUrl} alt="Imagen del paso" />
           )}
           <Button
             type="button"
@@ -99,7 +104,7 @@ export function ImageUpload({
             onClick={remove}
             disabled={pending}
             aria-label="Quitar imagen"
-            className="absolute right-1 top-1 h-7 w-7 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus:opacity-100"
+            className="absolute right-1 top-1 z-10 h-7 w-7 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus:opacity-100"
             style={{ transitionTimingFunction: "var(--ease-out-strong)" }}
           >
             <X className="size-3.5" />

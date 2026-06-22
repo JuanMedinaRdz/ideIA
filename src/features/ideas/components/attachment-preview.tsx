@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { FileImage, FileAudio, ExternalLink } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { ImageLightbox } from "@/components/shared/image-lightbox";
 import { cn } from "@/lib/utils";
 
 /**
@@ -32,22 +33,12 @@ export function AttachmentPreview({
 
   if (isImage && !imageError) {
     return (
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={cn("group block overflow-hidden rounded-lg border border-border", className)}
-        aria-label="Abrir imagen en pestaña nueva"
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={url}
-          alt="Adjunto de la idea"
-          loading="lazy"
-          onError={() => setImageError(true)}
-          className="max-h-96 w-full object-contain bg-muted/30 transition group-hover:opacity-95"
-        />
-      </a>
+      <ImageLightbox
+        src={url}
+        alt="Adjunto de la idea"
+        className={className}
+        thumbnailClassName="max-h-96 w-full object-contain bg-muted/30"
+      />
     );
   }
 
